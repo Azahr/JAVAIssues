@@ -1,0 +1,9 @@
+##Issue: 
+If we have a GUI which is offering Insert,Delete,Update, Once the user submits the page there might be the chance
+of resubmitting the request in following ways.
+
+01. By Clicking on Submit/Save/Delete/Update button for multiple times
+02. After submitting the request clicking refresh button in the browser
+03. After submitting the request clicking back button and resubmitting the request.
+
+##Solution
