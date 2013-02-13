@@ -1,3 +1,5 @@
+http://www.java-samples.com/showtutorial.php?tutorialid=582
+
 Duplicate form submissions are acceptable in some cases. Such scenarios are called idempotent transitions. When multiple submissions of data are not critical enough to impact the behavior of the application, duplicate form submissions do not pose a threat.
 
 They can cause a lot of grief if for instance you are buying from an online store and accidentally press refresh on the page where you are charged. If storefront is smart enough, it will recognize duplicate submissions and handle it graciously without charging you twice.
