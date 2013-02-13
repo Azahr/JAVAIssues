@@ -1,0 +1,55 @@
+Duplicate form submissions are acceptable in some cases. Such scenarios are called idempotent transitions. When multiple submissions of data are not critical enough to impact the behavior of the application, duplicate form submissions do not pose a threat.
+
+They can cause a lot of grief if for instance you are buying from an online store and accidentally press refresh on the page where you are charged. If storefront is smart enough, it will recognize duplicate submissions and handle it graciously without charging you twice.
+
+Duplicate form submissions can occur in many ways
+ Using Refresh button 
+ Using the browser back button to traverse back and resubmit form 
+ Using Browser history feature and re-submit form. 
+ Malicious submissions to adversely impact the server or personal gains 
+ Clicking more than once on a transaction that take longer than usual
+
+Why is the form submitted again after all, when the refresh button is pressed? The answer lies in the URL seen in the URL bar of your browser after the form submission. Consider a form as: <form name=CustomerForm” action=”/App1/submitCustomerForm.do”>. The above form is submitted with the URL /App1/submitCustomerForm.do and the same URL is shown in the URL bar. On the back end, Struts selects the action mapping associated with submitCustomerForm and executes the action instance. When you press refresh, the same URL is submitted and the same action instance is executed again. The easy solution to this problem is to use HTTP redirect after the form submission. Suppose that the CustomerForm submission results in showing a page called Success.jsp. When HTTP redirect is used, the URL in the URL bar becomes /App1/Success.jsp instead of /App1/submitCustomerForm.do. When the page refreshed, it is the Success.jsp that is loaded again instead of /App1/submitCustomerForm.do. Hence the form is not submitted again. To use the HTTP redirect feature, the forward is set as follows:
+
+<forward name=”success” path=”/Success.jsp” redirect=”true” />
+
+However there is one catch. With the above setting, the actual JSP name is shown in the URL. Whenever the JSP name appears in the URL bar, it is a candidate for ForwardAction. Hence change the above forward to be as follows:
+
+<forward name=”success” path=”/GotoSuccess.do” redirect=”true” />
+
+where GotoSuccess.do is another action mapping using ForwardAction as follows:
+
+<action path=”/GotoSuccess” 
+type=”org.apache.struts.actions.ForwardAction” 
+parameter=”/Success.jsp” 
+validate=”false” />
+
+Now, you have now addressed the duplicate submission due to accidental refreshing by the customer. It does not prevent you from intentionally going back in the browser history and submitting the form again. Malicious users might attempt this if the form submissions benefit them or adversely impact the server.
+
+Struts provides you with the next level of defense: Synchronizer Token. To understand how the Synchronizer Token works, some background about built-in functionalities in the Action class is required. The Action class has a method called saveToken() whose logic is as follows:
+
+HttpSession session = request.getSession(); 
+String token = generateToken(request); 
+if (token != null) { 
+session.setAttribute(Globals.TRANSACTION_TOKEN_KEY, token); 
+}
+
+The method generates a random token using session id, current time and a MessageDigest and stores it in the session using a key name org.apache.struts.action.TOKEN (This is the value of the static variable TRANSACTION_TOKEN_KEY in org.apache.struts.Globals class.
+
+The Action class that renders the form invokes the saveToken() method to create a session attribute with the above name. In the JSP, you have to use the token as a hidden form field as follows:
+
+<input type="hidden" 
+name="<%=org.apache.struts.taglib.html.Constants.TOKEN_KEY%>" 
+value="<bean:write name="<%=Globals.TRANSACTION_TOKEN_KEY%>"/>">
+
+The embedded <bean:write> tag shown above, looks for a bean named org.apache.struts.action.TOKEN (which is the the value of Globals. TRANSACTION_TOKEN_KEY ) in session scope and renders its value as the value attribute of the hidden input variable. The name of the hidden input variable is org.apache.struts.taglib.html.TOKEN (This is nothing but the value of the static variable TOKEN_KEY in the class org.apache.struts.taglib.html.Constants).
+
+When the client submits the form, the hidden field is also submitted. In the Action that handles the form submission (which most likely is different from the Action that rendered the form), the token in the form submission is compared with the token in the session by using the isTokenValid() method. The method compares the two tokens and returns a true if both are same. Be sure to pass reset=”true” in the isTokenValid() method to clear the token from session after comparison. If the two tokens are equal, the form was submitted for the first time. However, if the two tokens do not match or if there is no token in the session, then it is a duplicate submission and handle it in the manner 
+acceptable to your users.
+
+NOTE: We could also have chosen to have the synchronizer token as an ActionForm attribute. In that case, the <html:hidden> tag could have been used instead of the above <input type=”hidden”> tag (which looks complicated at the first sight). However we have not chosen to go down this path since protection from duplicate submission is not a characteristic of the form and it does not logically fit there very well.
+
+Although the above approach is good, it requires you as a application developer to add the token checking method pair – saveToken() and isTokenValid() in methods rendering and submitting the sensitive forms respectively. Since the two tasks are generally performed by two different Actions, you have to identify the pairs and add them manually. You can use the same approach for sensitive hyperlink navigations. Just set the tranaction attribute in <html:link> to true and use the same logic in the Action classes to track the duplicate hyperlink navigations. 
+
+The reset argument of the isTokenValid() is useful for multi-page form scenario. Consider a form that spans across multiple pages. The form is submitted every time the user traverses from one page to another. You definitely want to validate token on every page submission. However you also want to allow the user to traverse back and forth using the browser back button until the point of final submission. If the token is reset on every page submission, the possibility of back and forth traversal using the browser button is ruled out. The solution is not disabling back button (using JavaScript hacks) but to handle the token intelligently. This is where the reset argument is useful. The token is initially set before showing the first page of the form. The reset argument is 
+false for all the isTokenValid() invocations except in the Action for the last page. The last page uses a true value for the reset argument and hence the token is reset in the isTokenValid() method. From this point onwards you cannot use back button to traverse to the earlier form pages and successfully submit the form.
