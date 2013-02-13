@@ -3,11 +3,11 @@ Duplicate form submissions are acceptable in some cases. Such scenarios are call
 They can cause a lot of grief if for instance you are buying from an online store and accidentally press refresh on the page where you are charged. If storefront is smart enough, it will recognize duplicate submissions and handle it graciously without charging you twice.
 
 Duplicate form submissions can occur in many ways
- Using Refresh button 
- Using the browser back button to traverse back and resubmit form 
- Using Browser history feature and re-submit form. 
- Malicious submissions to adversely impact the server or personal gains 
- Clicking more than once on a transaction that take longer than usual
+` Using Refresh button `
+` Using the browser back button to traverse back and resubmit form `
+` Using Browser history feature and re-submit form. `
+` Malicious submissions to adversely impact the server or personal gains `
+` Clicking more than once on a transaction that take longer than usual`
 
 Why is the form submitted again after all, when the refresh button is pressed? The answer lies in the URL seen in the URL bar of your browser after the form submission. Consider a form as: <form name=CustomerForm” action=”/App1/submitCustomerForm.do”>. The above form is submitted with the URL /App1/submitCustomerForm.do and the same URL is shown in the URL bar. On the back end, Struts selects the action mapping associated with submitCustomerForm and executes the action instance. When you press refresh, the same URL is submitted and the same action instance is executed again. The easy solution to this problem is to use HTTP redirect after the form submission. Suppose that the CustomerForm submission results in showing a page called Success.jsp. When HTTP redirect is used, the URL in the URL bar becomes /App1/Success.jsp instead of /App1/submitCustomerForm.do. When the page refreshed, it is the Success.jsp that is loaded again instead of /App1/submitCustomerForm.do. Hence the form is not submitted again. To use the HTTP redirect feature, the forward is set as follows:
 
