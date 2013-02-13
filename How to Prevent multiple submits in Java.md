@@ -7,6 +7,7 @@ of resubmitting the request in following ways.
 `03. After submitting the request clicking back button and resubmitting the request.`
 
 ###Solution
+<pre>
 
 Hi
 Our application is a State Based one...we have to allow user to submit form only once. We are using struts1.1,servlet2.3,jstl,jboss.
@@ -71,3 +72,5 @@ test.jsp
 If i use browser back button once i submit form isTokenValid(request)) in TestPostAction always returns the true..... instead of false.....
 
 it working fine if i use refresh button.
+
+
